@@ -1,0 +1,100 @@
+- hosts: all
+  tasks:  
+          - name: "To create mount point"
+            file:
+                  state: directory
+                  path: "/dvd"
+          - name: "mount the dvd "
+            mount: 
+                  state: mounted
+                  src: "/dev/cdrom"
+                  fstype: "iso9660"
+                  path: "/dvd"
+          - name: "Configure Appstream soft"
+            yum_repository:
+                 name: "mydvd1"
+                 baseurl: "/dvd/AppStream"
+                 description: " to get AppStream Soft."
+                 gpgcheck: no
+          - name: "Configure BaseOS soft"
+            yum_repository:
+                 name: "mydvd2"
+                 baseurl: "/dvd/BaseOS"
+                 description: " to get BaseOS Soft."
+                 gpgcheck: no
+          - name: "Tell location of docker software"
+            yum_repository:
+                  name: docker
+                  baseurl: https://download.docker.com/linux/centos/7/x86_64/stable
+                  description: yum configur
+                  state: present
+                  gpgcheck: 0
+         
+          - name: "create firewalld rule for port 8080"
+            firewalld:
+                  port: "8080/tcp"
+                  state: enabled
+                  permanent: yes
+                  immediate: yes
+
+          - name: "Install docker on Managed Node"
+            command: "dnf install docker-ce  --nobest -y"
+          - name: " Start Docker Services"
+            service:
+                  name: docker
+                  state: started
+
+          - name: " Install pip3 command "
+            command: "yum install python3-pip -y"
+
+          - name: "Install docker SDK"
+            pip:
+                  name: "docker"
+
+          - name: "Pull httpd docker image"
+            docker_image:
+                  name: httpd
+                  source: pull
+          - name: " Create Persistent Volume of container"
+            file:
+                  path: "/root/WS"
+                  state: directory
+
+          - name: "Copy web pages inside container"
+            copy:
+                  src: "index.html"
+                  dest: /root/WS
+          
+          - name: "Launch docker container and expose"
+            docker_container:
+                  name: web3
+                  image: httpd
+                  state: started
+                  detach: yes
+                  exposed_ports:
+                        - "80"
+                  ports: 
+                        - "8080:80"
+                  volumes:
+                        - "/root/WS:/usr/local/apache2/htdocs"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
